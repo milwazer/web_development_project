@@ -1,0 +1,79 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="er-organizer" name="ER-диаграмма">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="users" value="users" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="200" width="220" height="156" as="geometry" />
+        </mxCell>
+        <mxCell id="u_id" value="PK   id : SERIAL" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="users">
+          <mxGeometry y="26" width="220" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="u_email" value="email : VARCHAR(100) UNIQUE" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="users">
+          <mxGeometry y="52" width="220" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="u_pass" value="password_hash : VARCHAR(255)" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="users">
+          <mxGeometry y="78" width="220" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="u_role" value="role : VARCHAR(10) DEFAULT 'user'" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="users">
+          <mxGeometry y="104" width="220" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="u_block" value="is_blocked : BOOLEAN DEFAULT FALSE" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="users">
+          <mxGeometry y="130" width="220" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="categories" value="categories" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="470" y="80" width="240" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="c_id" value="PK   id : SERIAL" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="categories">
+          <mxGeometry y="26" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_user" value="FK   user_id : INT NOT NULL" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="categories">
+          <mxGeometry y="52" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_name" value="name : VARCHAR(50) NOT NULL" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="categories">
+          <mxGeometry y="78" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tasks" value="tasks" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="470" y="320" width="240" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="t_id" value="PK   id : SERIAL" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="tasks">
+          <mxGeometry y="26" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_user" value="FK   user_id : INT NOT NULL" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="tasks">
+          <mxGeometry y="52" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_cat" value="FK   category_id : INT (NULL)" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="tasks">
+          <mxGeometry y="78" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_title" value="title : VARCHAR(200) NOT NULL" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="tasks">
+          <mxGeometry y="104" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_desc" value="description : TEXT" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="tasks">
+          <mxGeometry y="130" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_prio" value="priority : VARCHAR(10) NOT NULL" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="tasks">
+          <mxGeometry y="156" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_dead" value="deadline : DATE" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="tasks">
+          <mxGeometry y="182" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_stat" value="status : VARCHAR(10) NOT NULL" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="tasks">
+          <mxGeometry y="208" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="t_creat" value="created_at : TIMESTAMP DEFAULT NOW()" style="shape=partialRectangle;connectable=1;strokeColor=inherit;fillColor=inherit;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="tasks">
+          <mxGeometry y="234" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="edgeStyle=entityRelationEdgeStyle;html=1;startArrow=ERone;endArrow=ERmany;rounded=0;strokeColor=#666666;" edge="1" parent="1" source="u_id" target="c_user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=entityRelationEdgeStyle;html=1;startArrow=ERone;endArrow=ERmany;rounded=0;strokeColor=#666666;" edge="1" parent="1" source="u_id" target="t_user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=entityRelationEdgeStyle;html=1;startArrow=ERone;endArrow=ERmany;rounded=0;strokeColor=#666666;" edge="1" parent="1" source="c_id" target="t_cat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
