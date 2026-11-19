@@ -103,6 +103,18 @@ def parse_task_form():
     }, None
 
 
+def load_task_or_404(task_id):
+    """Задача текущего пользователя или 404 (чужие задачи не видны)."""
+    task = db.query(
+        'SELECT * FROM tasks WHERE id = %s AND user_id = %s',
+        (task_id, session['user_id']),
+        fetch='one',
+    )
+    if task is None:
+        abort(404)
+    return task
+
+
 def form_defaults(task=None):
     """Значения полей формы: из формы при ошибке, из задачи, иначе пустые."""
     if request.method == 'POST':
@@ -177,6 +189,49 @@ def task_create():
         categories=user_categories(),
         form=form_defaults(),
     )
+
+
+@app.route('/tasks/<int:task_id>/edit', methods=['GET', 'POST'])
+@login_required
+def task_edit(task_id):
+    """Редактирование своей задачи."""
+    task = load_task_or_404(task_id)
+    if request.method == 'POST':
+        data, error = parse_task_form()
+        if error:
+            flash(error, 'danger')
+        else:
+            db.query(
+                '''
+                UPDATE tasks
+                SET category_id = %s, title = %s, description = %s,
+                    priority = %s, deadline = %s, status = %s
+                WHERE id = %s
+                ''',
+                (data['category_id'], data['title'], data['description'],
+                 data['priority'], data['deadline'], data['status'], task_id),
+                fetch='none',
+            )
+            flash('Изменения сохранены', 'success')
+            return redirect(url_for('index'))
+
+    return render_template(
+        'task_form.html',
+        page_title='Редактирование задачи',
+        action_url=url_for('task_edit', task_id=task_id),
+        categories=user_categories(),
+        form=form_defaults(task),
+    )
+
+
+@app.route('/tasks/<int:task_id>/delete', methods=['POST'])
+@login_required
+def task_delete(task_id):
+    """Удаление своей задачи (POST + подтверждение в браузере)."""
+    load_task_or_404(task_id)
+    db.query('DELETE FROM tasks WHERE id = %s', (task_id,), fetch='none')
+    flash('Задача удалена', 'success')
+    return redirect(url_for('index'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
