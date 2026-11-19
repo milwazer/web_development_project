@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 import config
 
@@ -17,13 +18,13 @@ def get_connection():
 def query(sql, params=(), fetch='all'):
     """Выполняет SQL-запрос с параметрами (защита от SQL-инъекций).
 
-    fetch='all'  — вернуть список строк,
-    fetch='one'  — вернуть одну строку или None,
+    fetch='all'  — вернуть список строк (словари),
+    fetch='one'  — вернуть одну строку (словарь) или None,
     fetch='none' — ничего не возвращать (INSERT/UPDATE/DELETE).
     """
     conn = get_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(sql, params)
             result = None
             if fetch == 'all':

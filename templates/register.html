@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация — Органайзер{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h4 class="card-title text-center mb-3">Регистрация</h4>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control"
+                   value="{{ request.form.get('email', '') }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Пароль (не короче 6 символов)</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Повторите пароль</label>
+            <input type="password" name="password2" class="form-control" required>
+          </div>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+          </div>
+        </form>
+        <p class="text-center mt-3 mb-0">
+          <a href="{{ url_for('login') }}">Уже есть аккаунт? Войти</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
