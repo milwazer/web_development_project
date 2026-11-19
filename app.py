@@ -1,7 +1,7 @@
-from datetime import date
+from datetime import date, datetime
 from functools import wraps
 
-from flask import (Flask, flash, redirect, render_template, request,
+from flask import (Flask, abort, flash, redirect, render_template, request,
                    session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -40,6 +40,93 @@ def inject_current_user():
     return {'current_user': current_user}
 
 
+# Допустимые значения полей задачи (совпадают с CHECK-ограничениями в БД)
+PRIORITIES = ('низкий', 'средний', 'высокий')
+STATUSES = ('новая', 'в работе', 'выполнена')
+
+
+def user_categories():
+    """Категории текущего пользователя (для выпадающего списка в форме)."""
+    return db.query(
+        'SELECT id, name FROM categories WHERE user_id = %s ORDER BY name',
+        (session['user_id'],),
+    )
+
+
+def parse_task_form():
+    """Разбирает и проверяет форму задачи.
+
+    Возвращает кортеж (данные для БД или None, сообщение об ошибке или None).
+    """
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip() or None
+    priority = request.form.get('priority', 'средний')
+    status = request.form.get('status', 'новая')
+    deadline_raw = request.form.get('deadline', '').strip()
+    category_raw = request.form.get('category_id', '').strip()
+
+    if not title or len(title) > 200:
+        return None, 'Введите название задачи (до 200 символов)'
+    if priority not in PRIORITIES:
+        return None, 'Некорректный приоритет'
+    if status not in STATUSES:
+        return None, 'Некорректный статус'
+
+    deadline = None
+    if deadline_raw:
+        try:
+            deadline = datetime.strptime(deadline_raw, '%Y-%m-%d').date()
+        except ValueError:
+            return None, 'Некорректная дата дедлайна'
+
+    category_id = None
+    if category_raw:
+        try:
+            category_id = int(category_raw)
+        except ValueError:
+            return None, 'Некорректная категория'
+        cat = db.query(
+            'SELECT id FROM categories WHERE id = %s AND user_id = %s',
+            (category_id, session['user_id']),
+            fetch='one',
+        )
+        if cat is None:
+            return None, 'Выбрана недоступная категория'
+
+    return {
+        'title': title,
+        'description': description,
+        'priority': priority,
+        'status': status,
+        'deadline': deadline,
+        'category_id': category_id,
+    }, None
+
+
+def form_defaults(task=None):
+    """Значения полей формы: из формы при ошибке, из задачи, иначе пустые."""
+    if request.method == 'POST':
+        return {
+            'title': request.form.get('title', ''),
+            'description': request.form.get('description', ''),
+            'priority': request.form.get('priority', 'средний'),
+            'status': request.form.get('status', 'новая'),
+            'deadline': request.form.get('deadline', ''),
+            'category_id': request.form.get('category_id', ''),
+        }
+    if task is None:
+        return {'title': '', 'description': '', 'priority': 'средний',
+                'status': 'новая', 'deadline': '', 'category_id': ''}
+    return {
+        'title': task['title'],
+        'description': task['description'] or '',
+        'priority': task['priority'],
+        'status': task['status'],
+        'deadline': task['deadline'].isoformat() if task['deadline'] else '',
+        'category_id': str(task['category_id']) if task['category_id'] else '',
+    }
+
+
 @app.route('/')
 @login_required
 def index():
@@ -58,6 +145,38 @@ def index():
         (session['user_id'],),
     )
     return render_template('index.html', tasks=tasks, today=date.today())
+
+
+@app.route('/tasks/new', methods=['GET', 'POST'])
+@login_required
+def task_create():
+    """Создание новой задачи."""
+    if request.method == 'POST':
+        data, error = parse_task_form()
+        if error:
+            flash(error, 'danger')
+        else:
+            db.query(
+                '''
+                INSERT INTO tasks (user_id, category_id, title, description,
+                                   priority, deadline, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ''',
+                (session['user_id'], data['category_id'], data['title'],
+                 data['description'], data['priority'], data['deadline'],
+                 data['status']),
+                fetch='none',
+            )
+            flash('Задача добавлена', 'success')
+            return redirect(url_for('index'))
+
+    return render_template(
+        'task_form.html',
+        page_title='Новая задача',
+        action_url=url_for('task_create'),
+        categories=user_categories(),
+        form=form_defaults(),
+    )
 
 
 @app.route('/register', methods=['GET', 'POST'])
