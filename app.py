@@ -1,3 +1,4 @@
+from datetime import date
 from functools import wraps
 
 from flask import (Flask, flash, redirect, render_template, request,
@@ -42,8 +43,21 @@ def inject_current_user():
 @app.route('/')
 @login_required
 def index():
-    """Главная страница — список задач (появится на следующем этапе)."""
-    return render_template('index.html')
+    """Главная страница — список своих задач.
+
+    Сортировка по дедлайну: сначала ближайшие, без дедлайна — в конце.
+    """
+    tasks = db.query(
+        '''
+        SELECT tasks.*, categories.name AS category_name
+        FROM tasks
+        LEFT JOIN categories ON categories.id = tasks.category_id
+        WHERE tasks.user_id = %s
+        ORDER BY tasks.deadline ASC NULLS LAST, tasks.id DESC
+        ''',
+        (session['user_id'],),
+    )
+    return render_template('index.html', tasks=tasks, today=date.today())
 
 
 @app.route('/register', methods=['GET', 'POST'])
