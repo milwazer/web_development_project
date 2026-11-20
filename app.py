@@ -115,6 +115,28 @@ def load_task_or_404(task_id):
     return task
 
 
+def load_category_or_404(category_id):
+    """Категория текущего пользователя или 404."""
+    cat = db.query(
+        'SELECT * FROM categories WHERE id = %s AND user_id = %s',
+        (category_id, session['user_id']),
+        fetch='one',
+    )
+    if cat is None:
+        abort(404)
+    return cat
+
+
+def valid_category_name(name):
+    """Проверка названия категории. Возвращает сообщение об ошибке или None."""
+    if not name or len(name) > 50:
+        return 'Введите название категории (до 50 символов)'
+    if db.query('SELECT id FROM categories WHERE user_id = %s AND name = %s',
+                (session['user_id'], name), fetch='one'):
+        return 'Такая категория уже есть'
+    return None
+
+
 def form_defaults(task=None):
     """Значения полей формы: из формы при ошибке, из задачи, иначе пустые."""
     if request.method == 'POST':
@@ -232,6 +254,61 @@ def task_delete(task_id):
     db.query('DELETE FROM tasks WHERE id = %s', (task_id,), fetch='none')
     flash('Задача удалена', 'success')
     return redirect(url_for('index'))
+
+
+@app.route('/categories', methods=['GET', 'POST'])
+@login_required
+def categories():
+    """Список категорий пользователя и добавление новой."""
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        error = valid_category_name(name)
+        if error:
+            flash(error, 'danger')
+        else:
+            db.query('INSERT INTO categories (user_id, name) VALUES (%s, %s)',
+                     (session['user_id'], name), fetch='none')
+            flash('Категория добавлена', 'success')
+        return redirect(url_for('categories'))
+
+    cats = db.query(
+        '''
+        SELECT categories.id, categories.name, COUNT(tasks.id) AS task_count
+        FROM categories
+        LEFT JOIN tasks ON tasks.category_id = categories.id
+        WHERE categories.user_id = %s
+        GROUP BY categories.id, categories.name
+        ORDER BY categories.name
+        ''',
+        (session['user_id'],),
+    )
+    return render_template('categories.html', categories=cats)
+
+
+@app.route('/categories/<int:category_id>/rename', methods=['POST'])
+@login_required
+def category_rename(category_id):
+    """Переименование своей категории."""
+    load_category_or_404(category_id)
+    name = request.form.get('name', '').strip()
+    error = valid_category_name(name)
+    if error:
+        flash(error, 'danger')
+    else:
+        db.query('UPDATE categories SET name = %s WHERE id = %s',
+                 (name, category_id), fetch='none')
+        flash('Категория переименована', 'success')
+    return redirect(url_for('categories'))
+
+
+@app.route('/categories/<int:category_id>/delete', methods=['POST'])
+@login_required
+def category_delete(category_id):
+    """Удаление своей категории. Её задачи остаются без категории (SET NULL)."""
+    load_category_or_404(category_id)
+    db.query('DELETE FROM categories WHERE id = %s', (category_id,), fetch='none')
+    flash('Категория удалена. Её задачи остались без категории.', 'success')
+    return redirect(url_for('categories'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
