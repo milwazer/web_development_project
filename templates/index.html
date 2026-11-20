@@ -6,6 +6,42 @@
   <a href="{{ url_for('task_create') }}" class="btn btn-primary btn-sm">+ Новая задача</a>
 </div>
 
+<form method="get" class="row g-2 align-items-center mb-3">
+  <div class="col-md-3">
+    <input type="text" name="q" class="form-control" placeholder="Поиск по названию"
+           value="{{ request.args.get('q', '') }}">
+  </div>
+  <div class="col-md-2">
+    <select name="status" class="form-select">
+      <option value="">Все статусы</option>
+      {% for s in ['новая', 'в работе', 'выполнена'] %}
+        <option value="{{ s }}" {{ 'selected' if request.args.get('status') == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <select name="category" class="form-select">
+      <option value="">Все категории</option>
+      {% for cat in categories %}
+        <option value="{{ cat.id }}" {{ 'selected' if request.args.get('category') == cat.id|string }}>{{ cat.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="overdue" value="1" id="overdue"
+             {{ 'checked' if request.args.get('overdue') == '1' }}>
+      <label class="form-check-label" for="overdue">Просроченные</label>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-outline-primary w-100">Найти</button>
+  </div>
+  <div class="col-md-1">
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary w-100" title="Сбросить фильтры">Сброс</a>
+  </div>
+</form>
+
 <table class="table table-hover table-bordered bg-white align-middle">
   <thead class="table-light">
     <tr>
@@ -64,4 +100,6 @@
     {% endfor %}
   </tbody>
 </table>
+
+<p class="text-muted small">Найдено задач: {{ tasks|length }}</p>
 {% endblock %}

@@ -164,21 +164,45 @@ def form_defaults(task=None):
 @app.route('/')
 @login_required
 def index():
-    """Главная страница — список своих задач.
+    """Главная страница — список своих задач с поиском и фильтрами.
 
-    Сортировка по дедлайну: сначала ближайшие, без дедлайна — в конце.
+    Параметры запроса: q (подстрока названия), category (id),
+    status (статус), overdue=1 (только просроченные).
     """
-    tasks = db.query(
-        '''
+    search = request.args.get('q', '').strip()
+    category = request.args.get('category', '').strip()
+    status = request.args.get('status', '').strip()
+    overdue = request.args.get('overdue', '') == '1'
+
+    # условия собираются динамически, но значения всегда передаются
+    # параметрами — защита от SQL-инъекций сохраняется
+    sql = '''
         SELECT tasks.*, categories.name AS category_name
         FROM tasks
         LEFT JOIN categories ON categories.id = tasks.category_id
         WHERE tasks.user_id = %s
-        ORDER BY tasks.deadline ASC NULLS LAST, tasks.id DESC
-        ''',
-        (session['user_id'],),
-    )
-    return render_template('index.html', tasks=tasks, today=date.today())
+    '''
+    params = [session['user_id']]
+
+    if search:
+        sql += ' AND tasks.title ILIKE %s'
+        params.append('%' + search + '%')
+    if category:
+        try:
+            params.append(int(category))
+            sql += ' AND tasks.category_id = %s'
+        except ValueError:
+            pass  # мусор в параметре — просто игнорируем фильтр
+    if status:
+        sql += ' AND tasks.status = %s'
+        params.append(status)
+    if overdue:
+        sql += " AND tasks.deadline < CURRENT_DATE AND tasks.status != 'выполнена'"
+
+    sql += ' ORDER BY tasks.deadline ASC NULLS LAST, tasks.id DESC'
+    tasks = db.query(sql, tuple(params))
+    return render_template('index.html', tasks=tasks, today=date.today(),
+                           categories=user_categories())
 
 
 @app.route('/tasks/new', methods=['GET', 'POST'])
