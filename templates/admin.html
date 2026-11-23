@@ -46,15 +46,18 @@
         {% else %}
           {% if u.is_blocked %}
             <form method="post" action="{{ url_for('admin_unblock', user_id=u.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="btn btn-sm btn-outline-success">Разблокировать</button>
             </form>
           {% else %}
             <form method="post" action="{{ url_for('admin_block', user_id=u.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="btn btn-sm btn-outline-warning">Заблокировать</button>
             </form>
           {% endif %}
           <form method="post" action="{{ url_for('admin_delete', user_id=u.id) }}" class="d-inline"
                 onsubmit="return confirm('Удалить пользователя вместе с его задачами?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
           </form>
         {% endif %}

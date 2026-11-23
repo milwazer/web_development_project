@@ -3,7 +3,7 @@ import unittest
 
 import db
 
-from tests import make_client, register_and_login, drop_user, TEST_PASSWORD
+from tests import post, make_client, register_and_login, drop_user, TEST_PASSWORD
 
 TEST_EMAIL = 'tasks-unittest@example.com'
 
@@ -22,7 +22,7 @@ class TaskTests(unittest.TestCase):
         data = {'title': title, 'description': '', 'priority': 'средний',
                 'status': 'новая', 'deadline': '', 'category_id': ''}
         data.update(overrides)
-        return self.c.post('/tasks/new', data=data)
+        return post(self.c, '/tasks/new', data=data)
 
     def task_id_by_title(self, title):
         row = db.query('SELECT id FROM tasks WHERE title = %s', (title,),
@@ -54,7 +54,7 @@ class TaskTests(unittest.TestCase):
         """Редактирование меняет поля задачи в БД."""
         self.create_task()
         task_id = self.task_id_by_title('Тестовая задача')
-        r = self.c.post(f'/tasks/{task_id}/edit', data={
+        r = post(self.c, f'/tasks/{task_id}/edit', data={
             'title': 'Тестовая задача', 'description': '',
             'priority': 'высокий', 'status': 'выполнена',
             'deadline': '2026-12-15', 'category_id': '',
@@ -69,7 +69,7 @@ class TaskTests(unittest.TestCase):
         """Удалённой задачи нет в базе."""
         self.create_task(title='Задача на удаление')
         task_id = self.task_id_by_title('Задача на удаление')
-        r = self.c.post(f'/tasks/{task_id}/delete')
+        r = post(self.c, f'/tasks/{task_id}/delete')
         self.assertEqual(r.status_code, 302)
         self.assertIsNone(self.task_id_by_title('Задача на удаление'))
 
@@ -80,7 +80,7 @@ class TaskTests(unittest.TestCase):
         other = make_client()
         register_and_login(other, 'tasks-unittest-2@example.com')
         self.assertEqual(other.get(f'/tasks/{task_id}/edit').status_code, 404)
-        self.assertEqual(other.post(f'/tasks/{task_id}/delete').status_code, 404)
+        self.assertEqual(post(other, f'/tasks/{task_id}/delete').status_code, 404)
 
     def test_overdue_badge(self):
         """Просроченная невыполненная задача помечается в списке."""

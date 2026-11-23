@@ -1,7 +1,7 @@
 """Тесты пагинации списка задач (10 задач на страницу)."""
 import unittest
 
-from tests import make_client, register_and_login, drop_user
+from tests import post, make_client, register_and_login, drop_user
 
 TEST_EMAIL = 'pagination-unittest@example.com'
 
@@ -13,7 +13,7 @@ class PaginationTests(unittest.TestCase):
         register_and_login(self.c, TEST_EMAIL)
         # 12 задач -> две страницы
         for i in range(1, 13):
-            self.c.post('/tasks/new', data={'title': f'Задача №{i}',
+            post(self.c, '/tasks/new', data={'title': f'Задача №{i}',
                                             'priority': 'средний',
                                             'status': 'новая'})
 

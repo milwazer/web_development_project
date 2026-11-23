@@ -1,7 +1,7 @@
 """Тесты регистрации и авторизации."""
 import unittest
 
-from tests import make_client, register_and_login, drop_user, TEST_PASSWORD
+from tests import post, make_client, register_and_login, drop_user, TEST_PASSWORD
 
 SEED_EMAIL = 'user@example.com'
 TEST_EMAIL = 'auth-unittest@example.com'
@@ -29,7 +29,7 @@ class AuthTests(unittest.TestCase):
 
     def test_duplicate_email_rejected(self):
         """Повторная регистрация существующего email отклоняется."""
-        r = self.c.post('/register', data={'email': SEED_EMAIL,
+        r = post(self.c, '/register', data={'email': SEED_EMAIL,
                                            'password': TEST_PASSWORD,
                                            'password2': TEST_PASSWORD},
                         follow_redirects=True)
@@ -37,27 +37,27 @@ class AuthTests(unittest.TestCase):
 
     def test_short_password_rejected(self):
         """Пароль короче 6 символов отклоняется."""
-        r = self.c.post('/register', data={'email': TEST_EMAIL, 'password': '123',
+        r = post(self.c, '/register', data={'email': TEST_EMAIL, 'password': '123',
                                            'password2': '123'},
                         follow_redirects=True)
         self.assertIn('не короче 6 символов', r.get_data(as_text=True))
 
     def test_mismatched_passwords_rejected(self):
         """Несовпадающие пароли отклоняются."""
-        r = self.c.post('/register', data={'email': TEST_EMAIL, 'password': 'test123',
+        r = post(self.c, '/register', data={'email': TEST_EMAIL, 'password': 'test123',
                                            'password2': 'test999'},
                         follow_redirects=True)
         self.assertIn('Пароли не совпадают', r.get_data(as_text=True))
 
     def test_wrong_password_login(self):
         """Вход с неверным паролем отклоняется (без раскрытия email)."""
-        r = self.c.post('/login', data={'email': SEED_EMAIL, 'password': 'nope123'},
+        r = post(self.c, '/login', data={'email': SEED_EMAIL, 'password': 'nope123'},
                         follow_redirects=True)
         self.assertIn('Неверный email или пароль', r.get_data(as_text=True))
 
     def test_blocked_user_cannot_login(self):
         """Заблокированный пользователь не может войти (spam@example.com)."""
-        r = self.c.post('/login', data={'email': 'spam@example.com',
+        r = post(self.c, '/login', data={'email': 'spam@example.com',
                                         'password': 'spam123'},
                         follow_redirects=True)
         self.assertIn('заблокирован', r.get_data(as_text=True))

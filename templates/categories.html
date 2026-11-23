@@ -6,6 +6,7 @@
 <h5 class="mb-2">Мои категории</h5>
 
 <form method="post" action="{{ url_for('categories') }}" class="row g-2 mb-3">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="col-md-5">
     <input type="text" name="name" class="form-control" maxlength="50"
            placeholder="Название категории" required>
@@ -31,12 +32,14 @@
       <td>
         <form method="post" action="{{ url_for('category_rename', category_id=cat.id) }}"
               class="d-flex gap-1 mb-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="text" name="name" class="form-control form-control-sm"
                  value="{{ cat.name }}" maxlength="50" required>
           <button type="submit" class="btn btn-sm btn-outline-primary">Переименовать</button>
         </form>
         <form method="post" action="{{ url_for('category_delete', category_id=cat.id) }}"
               onsubmit="return confirm('Удалить категорию? Её задачи останутся без категории.')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
         </form>
       </td>

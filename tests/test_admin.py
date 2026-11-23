@@ -3,7 +3,7 @@ import unittest
 
 import db
 
-from tests import make_client, register_and_login, drop_user, TEST_PASSWORD
+from tests import post, make_client, register_and_login, drop_user, TEST_PASSWORD
 
 TEST_EMAIL = 'admin-unittest@example.com'
 
@@ -11,7 +11,7 @@ TEST_EMAIL = 'admin-unittest@example.com'
 class AdminTests(unittest.TestCase):
     def setUp(self):
         self.admin = make_client()
-        self.admin.post('/login', data={'email': 'admin@example.com',
+        post(self.admin, '/login', data={'email': 'admin@example.com',
                                         'password': 'admin123'})
 
     def tearDown(self):
@@ -39,18 +39,18 @@ class AdminTests(unittest.TestCase):
     def test_block_unblock_cycle(self):
         """Заблокированный не входит; после разблокировки — входит."""
         register_and_login(make_client(), TEST_EMAIL)
-        self.admin.post('/admin/2/block')  # user@example.com, id = 2
+        post(self.admin, '/admin/2/block')  # user@example.com, id = 2
         c = make_client()
-        r = c.post('/login', data={'email': 'user@example.com',
+        r = post(c, '/login', data={'email': 'user@example.com',
                                    'password': 'user123'}, follow_redirects=True)
         self.assertIn('заблокирован', r.get_data(as_text=True))
-        self.admin.post('/admin/2/unblock')
-        r = c.post('/login', data={'email': 'user@example.com',
+        post(self.admin, '/admin/2/unblock')
+        r = post(c, '/login', data={'email': 'user@example.com',
                                    'password': 'user123'})
         self.assertEqual(r.status_code, 302)
 
     def test_cannot_block_yourself(self):
-        r = self.admin.post('/admin/1/block', follow_redirects=True)
+        r = post(self.admin, '/admin/1/block', follow_redirects=True)
         self.assertIn('Нельзя заблокировать самого себя',
                       r.get_data(as_text=True))
         self.assertFalse(db.query('SELECT is_blocked FROM users WHERE id = 1',
@@ -60,13 +60,13 @@ class AdminTests(unittest.TestCase):
         """Удаление пользователя убирает его задачи и категории (ФР-17)."""
         register_and_login(make_client(), TEST_EMAIL)
         c = make_client()
-        c.post('/login', data={'email': TEST_EMAIL, 'password': TEST_PASSWORD})
-        c.post('/categories', data={'name': 'Категория на удаление'})
-        c.post('/tasks/new', data={'title': 'Задача на удаление',
+        post(c, '/login', data={'email': TEST_EMAIL, 'password': TEST_PASSWORD})
+        post(c, '/categories', data={'name': 'Категория на удаление'})
+        post(c, '/tasks/new', data={'title': 'Задача на удаление',
                                    'priority': 'низкий', 'status': 'новая'})
         user_id = db.query('SELECT id FROM users WHERE email = %s',
                            (TEST_EMAIL,), fetch='one')['id']
-        r = self.admin.post(f'/admin/{user_id}/delete', follow_redirects=True)
+        r = post(self.admin, f'/admin/{user_id}/delete', follow_redirects=True)
         self.assertIn('Пользователь удалён', r.get_data(as_text=True))
         self.assertIsNone(db.query('SELECT id FROM users WHERE email = %s',
                                    (TEST_EMAIL,), fetch='one'))

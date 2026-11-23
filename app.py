@@ -1,3 +1,4 @@
+import secrets
 from datetime import date, datetime
 from functools import wraps
 
@@ -52,9 +53,9 @@ def admin_required(view):
 
 
 @app.context_processor
-def inject_current_user():
-    """Делает current_user() доступным во всех шаблонах (для меню)."""
-    return {'current_user': current_user}
+def inject_template_helpers():
+    """Делает current_user() и csrf_token() доступными во всех шаблонах."""
+    return {'current_user': current_user, 'csrf_token': get_csrf_token}
 
 
 # Допустимые значения полей задачи (совпадают с CHECK-ограничениями в БД)
@@ -63,6 +64,21 @@ STATUSES = ('новая', 'в работе', 'выполнена')
 
 # Задач на одну страницу (пагинация)
 PER_PAGE = 10
+
+
+def get_csrf_token():
+    """Токен защиты форм от CSRF, хранится в сессии пользователя."""
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(16)
+    return session['csrf_token']
+
+
+def check_csrf():
+    """Проверяет CSRF-токен POST-запроса; при ошибке — 400."""
+    token = request.form.get('csrf_token', '')
+    if not token or token != session.get('csrf_token'):
+        abort(400, description='Неверный CSRF-токен. '
+                               'Обновите страницу и попробуйте снова.')
 
 
 def user_categories():
@@ -252,6 +268,7 @@ def index():
 def task_create():
     """Создание новой задачи."""
     if request.method == 'POST':
+        check_csrf()
         data, error = parse_task_form()
         if error:
             flash(error, 'danger')
@@ -285,6 +302,7 @@ def task_edit(task_id):
     """Редактирование своей задачи."""
     task = load_task_or_404(task_id)
     if request.method == 'POST':
+        check_csrf()
         data, error = parse_task_form()
         if error:
             flash(error, 'danger')
@@ -316,6 +334,7 @@ def task_edit(task_id):
 @login_required
 def task_delete(task_id):
     """Удаление своей задачи (POST + подтверждение в браузере)."""
+    check_csrf()
     load_task_or_404(task_id)
     db.query('DELETE FROM tasks WHERE id = %s', (task_id,), fetch='none')
     flash('Задача удалена', 'success')
@@ -327,6 +346,7 @@ def task_delete(task_id):
 def categories():
     """Список категорий пользователя и добавление новой."""
     if request.method == 'POST':
+        check_csrf()
         name = request.form.get('name', '').strip()
         error = valid_category_name(name)
         if error:
@@ -356,6 +376,7 @@ def categories():
 def category_rename(category_id):
     """Переименование своей категории."""
     load_category_or_404(category_id)
+    check_csrf()
     name = request.form.get('name', '').strip()
     error = valid_category_name(name)
     if error:
@@ -372,6 +393,7 @@ def category_rename(category_id):
 def category_delete(category_id):
     """Удаление своей категории. Её задачи остаются без категории (SET NULL)."""
     load_category_or_404(category_id)
+    check_csrf()
     db.query('DELETE FROM categories WHERE id = %s', (category_id,), fetch='none')
     flash('Категория удалена. Её задачи остались без категории.', 'success')
     return redirect(url_for('categories'))
@@ -408,6 +430,7 @@ def admin_block(user_id):
     if user_id == session['user_id']:
         flash('Нельзя заблокировать самого себя', 'danger')
         return redirect(url_for('admin_panel'))
+    check_csrf()
     db.query('UPDATE users SET is_blocked = TRUE WHERE id = %s', (user_id,),
              fetch='none')
     flash('Пользователь заблокирован', 'success')
@@ -418,6 +441,7 @@ def admin_block(user_id):
 @admin_required
 def admin_unblock(user_id):
     """Разблокировка пользователя."""
+    check_csrf()
     db.query('UPDATE users SET is_blocked = FALSE WHERE id = %s', (user_id,),
              fetch='none')
     flash('Пользователь разблокирован', 'success')
@@ -431,6 +455,7 @@ def admin_delete(user_id):
     if user_id == session['user_id']:
         flash('Нельзя удалить самого себя', 'danger')
         return redirect(url_for('admin_panel'))
+    check_csrf()
     db.query('DELETE FROM users WHERE id = %s', (user_id,), fetch='none')
     flash('Пользователь удалён вместе с его данными', 'success')
     return redirect(url_for('admin_panel'))
@@ -440,6 +465,7 @@ def admin_delete(user_id):
 def register():
     """Регистрация нового пользователя."""
     if request.method == 'POST':
+        check_csrf()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         password2 = request.form.get('password2', '')
@@ -470,6 +496,7 @@ def register():
 def login():
     """Авторизация по email и паролю."""
     if request.method == 'POST':
+        check_csrf()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
 
