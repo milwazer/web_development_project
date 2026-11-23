@@ -101,5 +101,25 @@
   </tbody>
 </table>
 
-<p class="text-muted small">Найдено задач: {{ tasks|length }}</p>
+<p class="text-muted small">Показано {{ tasks|length }} из {{ total_count }} задач</p>
+
+{% if total_pages > 1 %}
+<nav>
+  <ul class="pagination justify-content-center">
+    <li class="page-item {{ 'disabled' if page == 1 }}">
+      <a class="page-link"
+         href="{{ url_for('index', page=page - 1, **args) if page > 1 else '#' }}">&laquo;</a>
+    </li>
+    {% for p in range(1, total_pages + 1) %}
+    <li class="page-item {{ 'active' if p == page }}">
+      <a class="page-link" href="{{ url_for('index', page=p, **args) }}">{{ p }}</a>
+    </li>
+    {% endfor %}
+    <li class="page-item {{ 'disabled' if page == total_pages }}">
+      <a class="page-link"
+         href="{{ url_for('index', page=page + 1, **args) if page < total_pages else '#' }}">&raquo;</a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
 {% endblock %}

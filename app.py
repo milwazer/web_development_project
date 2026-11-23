@@ -44,6 +44,9 @@ def inject_current_user():
 PRIORITIES = ('низкий', 'средний', 'высокий')
 STATUSES = ('новая', 'в работе', 'выполнена')
 
+# Задач на одну страницу (пагинация)
+PER_PAGE = 10
+
 
 def user_categories():
     """Категории текущего пользователя (для выпадающего списка в форме)."""
@@ -174,35 +177,57 @@ def index():
     status = request.args.get('status', '').strip()
     overdue = request.args.get('overdue', '') == '1'
 
+    try:
+        page = int(request.args.get('page', '1'))
+    except ValueError:
+        page = 1
+
     # условия собираются динамически, но значения всегда передаются
     # параметрами — защита от SQL-инъекций сохраняется
-    sql = '''
-        SELECT tasks.*, categories.name AS category_name
-        FROM tasks
-        LEFT JOIN categories ON categories.id = tasks.category_id
-        WHERE tasks.user_id = %s
-    '''
+    where_sql = ' WHERE tasks.user_id = %s'
     params = [session['user_id']]
 
     if search:
-        sql += ' AND tasks.title ILIKE %s'
+        where_sql += ' AND tasks.title ILIKE %s'
         params.append('%' + search + '%')
     if category:
         try:
             params.append(int(category))
-            sql += ' AND tasks.category_id = %s'
+            where_sql += ' AND tasks.category_id = %s'
         except ValueError:
             pass  # мусор в параметре — просто игнорируем фильтр
     if status:
-        sql += ' AND tasks.status = %s'
+        where_sql += ' AND tasks.status = %s'
         params.append(status)
     if overdue:
-        sql += " AND tasks.deadline < CURRENT_DATE AND tasks.status != 'выполнена'"
+        where_sql += " AND tasks.deadline < CURRENT_DATE AND tasks.status != 'выполнена'"
 
-    sql += ' ORDER BY tasks.deadline ASC NULLS LAST, tasks.id DESC'
-    tasks = db.query(sql, tuple(params))
+    # всего задач с учётом фильтров (для числа страниц)
+    total_count = db.query(
+        'SELECT COUNT(*) AS n FROM tasks' + where_sql,
+        tuple(params), fetch='one',
+    )['n']
+    total_pages = max(1, (total_count + PER_PAGE - 1) // PER_PAGE)
+    page = min(max(page, 1), total_pages)
+
+    tasks = db.query(
+        '''
+        SELECT tasks.*, categories.name AS category_name
+        FROM tasks
+        LEFT JOIN categories ON categories.id = tasks.category_id
+        ''' + where_sql + '''
+        ORDER BY tasks.deadline ASC NULLS LAST, tasks.id DESC
+        LIMIT %s OFFSET %s
+        ''',
+        tuple(params) + (PER_PAGE, (page - 1) * PER_PAGE),
+    )
+    # параметры фильтров без page — чтобы ссылки страниц их сохраняли
+    args = request.args.to_dict()
+    args.pop('page', None)
     return render_template('index.html', tasks=tasks, today=date.today(),
-                           categories=user_categories())
+                           categories=user_categories(),
+                           page=page, total_pages=total_pages,
+                           total_count=total_count, args=args)
 
 
 @app.route('/tasks/new', methods=['GET', 'POST'])
