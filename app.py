@@ -27,9 +27,26 @@ def login_required(view):
     """Декоратор: страница доступна только вошедшим пользователям."""
     @wraps(view)
     def wrapper(*args, **kwargs):
-        if current_user() is None:
+        user = current_user()
+        if user is None:
             flash('Сначала войдите в аккаунт', 'warning')
             return redirect(url_for('login'))
+        if user['is_blocked']:
+            # заблокированного разлогиниваем при первом же действии
+            session.clear()
+            flash('Ваш аккаунт заблокирован администратором', 'danger')
+            return redirect(url_for('login'))
+        return view(*args, **kwargs)
+    return wrapper
+
+
+def admin_required(view):
+    """Декоратор: страница доступна только администратору (иначе 404)."""
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        user = current_user()
+        if user is None or user['role'] != 'admin':
+            abort(404)
         return view(*args, **kwargs)
     return wrapper
 
@@ -358,6 +375,65 @@ def category_delete(category_id):
     db.query('DELETE FROM categories WHERE id = %s', (category_id,), fetch='none')
     flash('Категория удалена. Её задачи остались без категории.', 'success')
     return redirect(url_for('categories'))
+
+
+@app.route('/admin')
+@admin_required
+def admin_panel():
+    """Панель администратора: список пользователей с поиском по email."""
+    search = request.args.get('q', '').strip()
+    sql = '''
+        SELECT users.id, users.email, users.role, users.is_blocked,
+               COUNT(tasks.id) AS task_count
+        FROM users
+        LEFT JOIN tasks ON tasks.user_id = users.id
+        WHERE 1 = 1
+    '''
+    params = []
+    if search:
+        sql += ' AND users.email ILIKE %s'
+        params.append('%' + search + '%')
+    sql += '''
+        GROUP BY users.id, users.email, users.role, users.is_blocked
+        ORDER BY users.id
+    '''
+    users = db.query(sql, tuple(params))
+    return render_template('admin.html', users=users, search=search)
+
+
+@app.route('/admin/<int:user_id>/block', methods=['POST'])
+@admin_required
+def admin_block(user_id):
+    """Блокировка пользователя (самого себя блокировать нельзя)."""
+    if user_id == session['user_id']:
+        flash('Нельзя заблокировать самого себя', 'danger')
+        return redirect(url_for('admin_panel'))
+    db.query('UPDATE users SET is_blocked = TRUE WHERE id = %s', (user_id,),
+             fetch='none')
+    flash('Пользователь заблокирован', 'success')
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/<int:user_id>/unblock', methods=['POST'])
+@admin_required
+def admin_unblock(user_id):
+    """Разблокировка пользователя."""
+    db.query('UPDATE users SET is_blocked = FALSE WHERE id = %s', (user_id,),
+             fetch='none')
+    flash('Пользователь разблокирован', 'success')
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/<int:user_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete(user_id):
+    """Удаление пользователя вместе с задачами и категориями (ON DELETE CASCADE)."""
+    if user_id == session['user_id']:
+        flash('Нельзя удалить самого себя', 'danger')
+        return redirect(url_for('admin_panel'))
+    db.query('DELETE FROM users WHERE id = %s', (user_id,), fetch='none')
+    flash('Пользователь удалён вместе с его данными', 'success')
+    return redirect(url_for('admin_panel'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
