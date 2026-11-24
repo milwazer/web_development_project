@@ -39,7 +39,14 @@
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li>
-                  <a class="dropdown-item" href="{{ url_for('logout') }}">Выйти</a>
+                  <a class="dropdown-item" href="{{ url_for('profile') }}">
+                    <i class="bi bi-person me-2"></i>Профиль
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('logout') }}">
+                    <i class="bi bi-box-arrow-right me-2"></i>Выйти
+                  </a>
                 </li>
               </ul>
             </li>

@@ -404,6 +404,50 @@ def category_delete(category_id):
     return redirect(url_for('categories'))
 
 
+@app.route('/profile')
+@login_required
+def profile():
+    """Профиль: данные аккаунта и статистика задач (ФР-13)."""
+    user = current_user()
+    stats = db.query(
+        '''
+        SELECT COUNT(*) AS total,
+               COUNT(*) FILTER (WHERE status = 'выполнена') AS done,
+               COUNT(*) FILTER (WHERE deadline < CURRENT_DATE
+                                AND status != 'выполнена') AS overdue
+        FROM tasks
+        WHERE user_id = %s
+        ''',
+        (session['user_id'],),
+        fetch='one',
+    )
+    return render_template('profile.html', user=user, stats=stats)
+
+
+@app.route('/profile/password', methods=['POST'])
+@login_required
+def change_password():
+    """Смена пароля с вводом старого (ФР-14)."""
+    check_csrf()
+    old = request.form.get('old_password', '')
+    new = request.form.get('new_password', '')
+    new2 = request.form.get('new_password2', '')
+
+    user = db.query('SELECT password_hash FROM users WHERE id = %s',
+                    (session['user_id'],), fetch='one')
+    if not check_password_hash(user['password_hash'], old):
+        flash('Текущий пароль указан неверно', 'danger')
+    elif len(new) < 6:
+        flash('Новый пароль должен быть не короче 6 символов', 'danger')
+    elif new != new2:
+        flash('Новые пароли не совпадают', 'danger')
+    else:
+        db.query('UPDATE users SET password_hash = %s WHERE id = %s',
+                 (generate_password_hash(new), session['user_id']), fetch='none')
+        flash('Пароль изменён', 'success')
+    return redirect(url_for('profile'))
+
+
 @app.route('/admin')
 @admin_required
 def admin_panel():

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Профиль — Органайзер{% endblock %}
+
+{% block content %}
+<h5 class="mb-3">Мой профиль</h5>
+
+<div class="row g-3">
+  <!-- данные аккаунта -->
+  <div class="col-md-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h6 class="card-title mb-3">Данные аккаунта</h6>
+        <dl class="row mb-0">
+          <dt class="col-5">Email</dt>
+          <dd class="col-7">{{ user.email }}</dd>
+          <dt class="col-5">Роль</dt>
+          <dd class="col-7">{{ 'Администратор' if user.role == 'admin' else 'Пользователь' }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- статистика задач -->
+  <div class="col-md-7">
+    <div class="row g-3">
+      <div class="col-4">
+        <div class="card text-center shadow-sm">
+          <div class="card-body">
+            <div class="fs-4 fw-bold">{{ stats.total }}</div>
+            <div class="text-muted small">Всего задач</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card text-center shadow-sm border-success">
+          <div class="card-body">
+            <div class="fs-4 fw-bold text-success">{{ stats.done }}</div>
+            <div class="text-muted small">Выполнено</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card text-center shadow-sm border-danger">
+          <div class="card-body">
+            <div class="fs-4 fw-bold text-danger">{{ stats.overdue }}</div>
+            <div class="text-muted small">Просрочено</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- смена пароля -->
+<div class="row mt-3">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title mb-3">Смена пароля</h6>
+        <form method="post" action="{{ url_for('change_password') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-2">
+            <label class="form-label">Текущий пароль</label>
+            <input type="password" name="old_password" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Новый пароль (не короче 6 символов)</label>
+            <input type="password" name="new_password" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Повторите новый пароль</label>
+            <input type="password" name="new_password2" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Изменить пароль</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
