@@ -2,3 +2,44 @@
 body {
     background-color: #f8f9fa;
 }
+
+/* Шапка: пункты меню крупнее и ярче */
+.navbar .nav-link {
+    font-size: 1.08rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.navbar .nav-link:hover {
+    color: #ffffff;
+}
+
+/* текущая страница в меню — белым и полужирным */
+.navbar .nav-link.active {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* выпадающее меню пользователя: аккуратный вид, у нижнего края шапки */
+.navbar .dropdown-menu {
+    margin-top: 0.55rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 13rem;
+}
+
+.navbar .dropdown-item {
+    padding: 0.55rem 1.25rem;
+}
+
+.navbar .dropdown-item:hover {
+    background-color: #eef2ff;
+}
+
+/* заметный горизонтальный скроллбар у адаптивных таблиц.
+   Стандартные свойства вместо ::-webkit-scrollbar: нативный
+   тонкий скроллбар корректно перетаскивается мышью */
+.table-responsive {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #adb5bd #e9ecef;
+}

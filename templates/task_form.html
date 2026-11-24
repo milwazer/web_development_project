@@ -40,8 +40,9 @@
               </select>
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label">Дедлайн</label>
-              <input type="date" name="deadline" class="form-control" value="{{ form.deadline }}">
+              <label class="form-label">Дедлайн (ДД.ММ.ГГГГ)</label>
+              <input type="text" name="deadline" class="form-control"
+                     placeholder="ДД.ММ.ГГГГ" value="{{ form.deadline }}">
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Статус</label>

@@ -110,10 +110,15 @@ def parse_task_form():
 
     deadline = None
     if deadline_raw:
-        try:
-            deadline = datetime.strptime(deadline_raw, '%Y-%m-%d').date()
-        except ValueError:
-            return None, 'Некорректная дата дедлайна'
+        # принимаем оба формата: ДД.ММ.ГГГГ (для человека) и ГГГГ-ММ-ДД
+        for fmt in ('%d.%m.%Y', '%Y-%m-%d'):
+            try:
+                deadline = datetime.strptime(deadline_raw, fmt).date()
+                break
+            except ValueError:
+                continue
+        if deadline is None:
+            return None, 'Некорректная дата дедлайна (формат ДД.ММ.ГГГГ)'
 
     category_id = None
     if category_raw:
@@ -192,7 +197,7 @@ def form_defaults(task=None):
         'description': task['description'] or '',
         'priority': task['priority'],
         'status': task['status'],
-        'deadline': task['deadline'].isoformat() if task['deadline'] else '',
+        'deadline': task['deadline'].strftime('%d.%m.%Y') if task['deadline'] else '',
         'category_id': str(task['category_id']) if task['category_id'] else '',
     }
 
