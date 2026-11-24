@@ -1,0 +1,71 @@
+{
+  "info": {
+    "name": "Органайзер — HTTP-маршруты",
+    "description": "Коллекция GET-запросов к страницам приложения. Приложение серверное (HTML): страницы с пометкой «требует входа» без сессии отвечают редиректом 302 на /login, /admin без прав администратора — 404.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Страница входа",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/login",
+        "description": "Ожидается 200 (HTML-форма входа)."
+      }
+    },
+    {
+      "name": "Страница регистрации",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/register",
+        "description": "Ожидается 200 (HTML-форма регистрации)."
+      }
+    },
+    {
+      "name": "Главная (список задач)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/",
+        "description": "Требует входа. Для гостя — 302 redirect на /login. После входа в браузере — 200 со списком задач. Поддерживает параметры: q, category, status, overdue=1, page."
+      }
+    },
+    {
+      "name": "Форма создания задачи",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/tasks/new",
+        "description": "Требует входа: гостю 302 на /login."
+      }
+    },
+    {
+      "name": "Категории",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/categories",
+        "description": "Требует входа: гостю 302 на /login."
+      }
+    },
+    {
+      "name": "Профиль",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/profile",
+        "description": "Требует входа: гостю 302 на /login."
+      }
+    },
+    {
+      "name": "Панель администратора",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/admin",
+        "description": "Только для роли admin: обычному пользователю и гостю — 404."
+      }
+    }
+  ]
+}
